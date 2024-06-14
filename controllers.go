@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -73,4 +74,44 @@ func Delete(w http.ResponseWriter, r *http.Request) {
 	error := Error{"Contact not found"}
 	w.WriteHeader(http.StatusBadRequest)
 	json.NewEncoder(w).Encode(error)
+}
+
+func FindAllPokemons(w http.ResponseWriter, r *http.Request) {
+	resp, err := http.Get("https://pokeapi.co/api/v2/pokemon")
+
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to fetch data: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	defer resp.Body.Close()
+
+	var data map[string]interface{}
+
+	if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
+		http.Error(w, fmt.Sprintf("Failed to decode response: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	// Extract results array from the data map
+	results, ok := data["results"].([]interface{})
+
+	if !ok {
+		http.Error(w, "Failed to parse results", http.StatusInternalServerError)
+		return
+	}
+
+	// Extract Pokemon names from each result
+	var pokemonNames []string
+	for _, result := range results {
+		if pokemon, ok := result.(map[string]interface{}); ok {
+			if name, ok := pokemon["name"].(string); ok {
+				pokemonNames = append(pokemonNames, name)
+			}
+		}
+	}
+
+	// Return the list of Pokemon names to the client
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(pokemonNames)
 }

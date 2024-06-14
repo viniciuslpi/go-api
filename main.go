@@ -41,6 +41,8 @@ func main() {
 	router.HandleFunc("/contato/{id}", Update).Methods("PATCH")
 	router.HandleFunc("/contato/{id}", Delete).Methods("DELETE")
 
+	router.HandleFunc("/pokemons", FindAllPokemons).Methods("GET")
+
 	fmt.Println("Running on port: 8000")
 
 	log.Fatal(http.ListenAndServe(":8000", router))
