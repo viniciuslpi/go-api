@@ -1,7 +1,7 @@
 package main
 
 import (
-	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 
@@ -35,60 +35,13 @@ func main() {
 
 	router := mux.NewRouter()
 
-	router.HandleFunc("/contato", GetPeople).Methods("GET")
-	router.HandleFunc("/contato/{id}", GetPerson).Methods("GET")
-	router.HandleFunc("/contato/{id}", CreatePerson).Methods("POST")
-	router.HandleFunc("/contato/{id}", DeletePerson).Methods("DELETE")
+	router.HandleFunc("/contato", FindAll).Methods("GET")
+	router.HandleFunc("/contato/{id}", FindOne).Methods("GET")
+	router.HandleFunc("/contato/{id}", Create).Methods("POST")
+	router.HandleFunc("/contato/{id}", Update).Methods("PATCH")
+	router.HandleFunc("/contato/{id}", Delete).Methods("DELETE")
+
+	fmt.Println("Running on port: 8000")
 
 	log.Fatal(http.ListenAndServe(":8000", router))
-}
-
-func GetPeople(w http.ResponseWriter, r *http.Request) {
-	json.NewEncoder(w).Encode(people)
-}
-
-func GetPerson(w http.ResponseWriter, r *http.Request) {
-	params := mux.Vars(r)
-	for _, item := range people {
-		if item.ID == params["id"] {
-			json.NewEncoder(w).Encode(item)
-			return
-		}
-	}
-	json.NewEncoder(w).Encode(&Person{})
-}
-
-func CreatePerson(w http.ResponseWriter, r *http.Request) {
-	params := mux.Vars(r)
-
-	for _, item := range people {
-		if item.ID == params["id"] {
-			error := Error{"The contact already exists on db"}
-			json.NewEncoder(w).Encode(error)
-			return
-		}
-	}
-
-	var person Person
-	_ = json.NewDecoder(r.Body).Decode(&person)
-	person.ID = params["id"]
-	people = append(people, person)
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(person)
-}
-
-func DeletePerson(w http.ResponseWriter, r *http.Request) {
-	params := mux.Vars(r)
-
-	for index, item := range people {
-		if item.ID == params["id"] {
-			people = append(people[:index], people[index+1:]...)
-			w.WriteHeader(http.StatusNoContent)
-			break
-		}
-	}
-
-	error := Error{"Contact not found"}
-	w.WriteHeader(http.StatusBadRequest)
-	json.NewEncoder(w).Encode(error)
 }
